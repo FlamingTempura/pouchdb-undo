@@ -1,42 +1,93 @@
-PouchDB Plugin Seed
+PouchDB Undo Plugin
 =====
 
-[![Build Status](https://travis-ci.org/pouchdb/plugin-seed.svg)](https://travis-ci.org/pouchdb/plugin-seed)
+Adds undo functionality to all operations (put, post, remove and bulkDocs) on a database. It allows the reversal of creations, changes and deletions.
 
-Fork this project to build your first PouchDB plugin.  It contains everything you need to test in Node, WebSQL, and IndexedDB.  It also includes a Travis config file so you
-can automatically run the tests in Travis.
+Usage
+---
 
-Building
-----
-    npm install
-    npm run build
+To use this plugin, include it after `pouchdb.js` in your HTML page:
 
-Your plugin is now located at `dist/pouchdb.mypluginname.js` and `dist/pouchdb.mypluginname.min.js` and is ready for distribution.
+```html
+<script src="pouchdb.js"></script>
+<script src="pouchdb.undo.js"></script>
+```
 
-Getting Started
--------
+Or to use it in Node.js, just npm install it:
 
-**First**, change the `name` in `package.json` to whatever you want to call your plugin.  Change the `build` script so that it writes to the desired filename (e.g. `pouchdb.mypluginname.js`).  Also, change the authors, description, git repo, etc.
+```bash
+npm install pouchdb-undo
+```
 
-**Next**, modify the `index.js` to do whatever you want your plugin to do.  Right now it just adds a `pouch.sayHello()` function that says hello:
+And then attach it to the `PouchDB` object:
 
 ```js
-exports.sayHello = utils.toPromise(function (callback) {
-  callback(null, 'hello');
+var PouchDB = require('pouchdb');
+PouchDB.plugin(require('pouchdb-undo'));
+```
+
+
+API
+---
+
+###undo(undoId)
+
+When calling undo, an undoId must be provided. An undoId is returned with each call to put, post, remove or bulkDocs.
+
+###put, post and remove
+
+For put, post and remove, an undoId is returned within the result:
+
+```js
+var pouch = new PouchDB('animals');
+pouch.enableUndo();
+
+pouch.put({ _id: 'dog', sound: 'bark' }).then(function (result) {
+  return pouch.put({ _id: 'dog', _rev: result.rev, sound: 'woof'});
+}).then(function (result) {
+  return pouch.undo(result.undoId);
+}).then(function () {
+  return pouch.get('dog')
+}).then(function (dog) {
+  // dog.sound === 'bark'
 });
 ```
 
-**Optionally**, you can add some tests in `tests/test.js`. These tests will be run both in the local database and a remote CouchDB, which is expected to be running at localhost:5984 in "Admin party" mode.
+###bulkDocs
 
-The sample test is:
+For bulkDocs, the undoId is returned within the each row of the result (and they will have identical undoIds)
 
 ```js
-
-it('should say hello', function () {
-  return db.sayHello().then(function (response) {
-    response.should.equal('hello');
-  });
+pouch.bulkDocs([
+  { _id: 'dog', sound: 'woof' },
+  { _id: 'cat', sound: 'miow' }
+]).then(function (result) {
+  return pouch.undo(result[0].undoId);
+}).then(function () {
+  return pouch.get('dog'); // --> 404 not_found
 });
+```
+
+Advanced usage
+----
+
+Undo history is stored in _local documents (so they will not show up in allDocs, and they are not synced). By default, up to 100 undo's are stored, which can be changed by providing options to enableUndo:
+
+```js
+pouch.enableUndo({ limit: 500 });
+```
+
+You can clear the entire undo history manually:
+```javascript
+pouch.clearUndo()
+```
+
+
+Building
+----
+```bash
+npm install
+npm run build
 ```
 
 Testing
@@ -46,58 +97,11 @@ Testing
 
 This will run the tests in Node using LevelDB:
 
-    npm test
-    
-You can also check for 100% code coverage using:
-
-    npm run coverage
-
-If you don't like the coverage results, change the values from 100 to something else in `package.json`, or add `/*istanbul ignore */` comments.
+    npm test    
 
 
-If you have mocha installed globally you can run single test with:
-```
-TEST_DB=local mocha --reporter spec --grep search_phrase
-```
-
-The `TEST_DB` environment variable specifies the database that PouchDB should use (see `package.json`).
-
-### In the browser
-
-Run `npm run dev` and then point your favorite browser to [http://127.0.0.1:8001/test/index.html](http://127.0.0.1:8001/test/index.html).
-
-The query param `?grep=mysearch` will search for tests matching `mysearch`.
-
-### Automated browser tests
-
-You can run e.g.
-
-    CLIENT=selenium:firefox npm test
-    CLIENT=selenium:phantomjs npm test
-
-This will run the tests automatically and the process will exit with a 0 or a 1 when it's done. Firefox uses IndexedDB, and PhantomJS uses WebSQL.
-
-What to tell your users
---------
-
-Below is some boilerplate you can use for when you want a real README for your users.
-
-To use this plugin, include it after `pouchdb.js` in your HTML page:
-
-```html
-<script src="pouchdb.js"></script>
-<script src="pouchdb.mypluginname.js"></script>
-```
-
-Or to use it in Node.js, just npm install it:
-
-```
-npm install pouchdb-myplugin
-```
-
-And then attach it to the `PouchDB` object:
-
-```js
-var PouchDB = require('pouchdb');
-PouchDB.plugin(require('pouchdb-myplugin'));
-```
+Limitations
+----
+1. At the moment a model can only be reverted once
+2. Making multiple changes at once to a database will lead to only one being kept in the undo history
+3. Undo will not work well if there are multiple leaves (unresolved conflicts)
