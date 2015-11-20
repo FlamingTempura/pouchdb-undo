@@ -157,6 +157,7 @@ describe('PouchDB Undo Plugin', function () {
 				{ _id: 'bdocB', message: 'Ant' },
 				{ _id: 'bdocC', message: 'Fly' }
 			]).then(function (result) {
+				result[0].should.have.property('undoId').which.is.a.String();
 				undoId = result[0].undoId;
 				result[1].undoId.should.equal(undoId);
 				result[2].undoId.should.equal(undoId);
@@ -192,6 +193,7 @@ describe('PouchDB Undo Plugin', function () {
 				{ _id: 'rdocA', _rev: revA, message: 'Cactus' },
 				{ _id: 'rdocB', _rev: revB, message: 'Tree' }
 			]).then(function (result) {
+				result[0].should.have.property('undoId').which.is.a.String();
 				undoId = result[0].undoId;
 				result[1].undoId.should.equal(undoId);
 			});
@@ -217,6 +219,7 @@ describe('PouchDB Undo Plugin', function () {
 				{ _id: 'cdocA', message: 'Bee' },
 				{ _id: 'cdocB', message: 'Ant' }
 			]).then(function (result) {
+				result[0].should.have.property('undoId').which.is.a.String();
 				undoId = result[0].undoId;
 				result[1].undoId.should.equal(undoId);
 				revA = result[0].rev;
@@ -261,7 +264,7 @@ describe('PouchDB Undo Plugin', function () {
 	});
 
 	describe('Limit', function () {
-		var db = new PouchDB('test7', { db: memdown });
+		var db = new PouchDB('test8', { db: memdown });
 		db.enableUndo({ limit: 10 });
 		it('should allow history to be cleared', function () {
 			return Bluebird.map(_.times(15, function (i) { return i; }), function (i) {
@@ -271,6 +274,16 @@ describe('PouchDB Undo Plugin', function () {
 			}).then(function (undoDoc) {
 				undoDoc.history.length.should.be.lessThan(11);
 				Object.keys(undoDoc.undos).length.should.be.lessThan(11);
+			});
+		});
+	});
+
+	describe('Invalid documents', function () {
+		var db = new PouchDB('test9', { db: memdown });
+		db.enableUndo({ limit: 10 });
+		it('should succeed when PouchDB generates an ID', function () {
+			return db.bulkDocs([{ }]).then(function (result) {
+				result[0].should.have.property('undoId').which.is.a.String();
 			});
 		});
 	});

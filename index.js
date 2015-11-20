@@ -16,10 +16,7 @@ exports.enableUndo = function (options) {
 			error.reason = options.reason;
 			return error;
 		},
-		origBulkDocs = db.bulkDocs,
-		findDoc = function (docs, id) {
-			return docs[docs.map(function (doc) { return doc._id === id; }).indexOf(true)];
-		};
+		origBulkDocs = db.bulkDocs;
 
 	var wrapUndo = function (orig, args) {
 		var docs = args.docs;
@@ -32,10 +29,10 @@ exports.enableUndo = function (options) {
 				undoDoc.history.push(undoId);
 				undoDoc.undos[undoId] = result.filter(function (row) {
 					return row.ok;
-				}).map(function (row) {
+				}).map(function (row, i) {
 					return {
 						id: row.id,
-						oldRev: findDoc(docs, row.id)._rev,
+						oldRev: docs[i]._rev,
 						newRev: row.rev
 					};
 				});
