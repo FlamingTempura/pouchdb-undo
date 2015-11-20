@@ -30,13 +30,9 @@ PouchDB.plugin(require('pouchdb-undo'));
 API
 ---
 
-###undo(undoId)
+###Undo `put`, `post` and `remove`
 
-When calling undo, an undoId must be provided. An undoId is returned with each call to put, post, remove or bulkDocs.
-
-###put, post and remove
-
-For put, post and remove, an undoId is returned within the result:
+For put, post and remove, an undoId is returned within the result, which must be provided to the `undo` method:
 
 ```js
 var pouch = new PouchDB('animals');
@@ -45,6 +41,7 @@ pouch.enableUndo();
 pouch.put({ _id: 'dog', sound: 'bark' }).then(function (result) {
   return pouch.put({ _id: 'dog', _rev: result.rev, sound: 'woof'});
 }).then(function (result) {
+  // undo changing the dog's sound
   return pouch.undo(result.undoId);
 }).then(function () {
   return pouch.get('dog')
@@ -53,18 +50,20 @@ pouch.put({ _id: 'dog', sound: 'bark' }).then(function (result) {
 });
 ```
 
-###bulkDocs
+###Undo `bulkDocs`
 
-For bulkDocs, the undoId is returned within the each row of the result (and they will have identical undoIds)
+For bulkDocs, the undoId is returned within the each row of the result (and they will have identical undoIds):
 
 ```js
 pouch.bulkDocs([
   { _id: 'dog', sound: 'woof' },
   { _id: 'cat', sound: 'miow' }
 ]).then(function (result) {
-  return pouch.undo(result[0].undoId);
+  // undo creating the cat and dog
+  return pouch.undo(result[0].undoId); // result[0].undoId === result[1].undoId
 }).then(function () {
-  return pouch.get('dog'); // --> 404 not_found
+  pouch.get('dog'); // --> 404 not_found
+  pouch.get('cat'); // --> 404 not_found
 });
 ```
 
@@ -79,8 +78,15 @@ pouch.enableUndo({ limit: 500 });
 
 You can clear the entire undo history manually:
 ```javascript
-pouch.clearUndo()
+pouch.clearUndo();
 ```
+
+
+Known issues
+----
+1. At the moment a document can only be reverted once.
+2. Race condition: making multiple changes at once to a database will lead to only one being kept in the undo history.
+3. Undo will not work well if there are multiple leaves (unresolved conflicts) - it will try to apply the undo to the first leaf found.
 
 
 Building
@@ -93,15 +99,7 @@ npm run build
 Testing
 ----
 
-### In Node
-
 This will run the tests in Node using LevelDB:
 
     npm test    
 
-
-Limitations
-----
-1. At the moment a model can only be reverted once
-2. Making multiple changes at once to a database will lead to only one being kept in the undo history
-3. Undo will not work well if there are multiple leaves (unresolved conflicts)
