@@ -1,6 +1,6 @@
 {
   "name": "pouchdb-undo",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "PouchDB undo plugin",
   "main": "index.js",
   "repository": {
