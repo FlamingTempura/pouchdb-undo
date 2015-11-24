@@ -62,12 +62,9 @@ API
 
 ###Undo `put`, `post` and `remove`
 
-For put, post and remove, an undoId is returned within the result, which must be provided to the `undo` method:
+For put, post and remove, an `undoId` is returned within the result, which must be provided to the `undo` method:
 
 ```js
-var pouch = new PouchDB('animals');
-pouch.enableUndo();
-
 pouch.put({ _id: 'dog', sound: 'bark' }).then(function (result) {
   return pouch.put({ _id: 'dog', _rev: result.rev, sound: 'woof'});
 }).then(function (result) {
@@ -82,7 +79,7 @@ pouch.put({ _id: 'dog', sound: 'bark' }).then(function (result) {
 
 ###Undo `bulkDocs`
 
-For bulkDocs, the undoId is returned within the each row of the result (and they will have identical undoIds):
+For bulkDocs, the `undoId` is returned within the each row of the result (and they will have identical `undoId`s):
 
 ```js
 pouch.bulkDocs([
@@ -114,7 +111,7 @@ pouch.clearUndo();
 
 Known issues
 ----
-1. At the moment a document can only be reverted once.
+1. At the moment only the latest operation on a document can be reverted.
 2. Race condition: making multiple changes at once to a database will lead to only one being kept in the undo history.
 3. Undo will not work well if there are multiple leaves (unresolved conflicts) - it will try to apply the undo to the first leaf found.
 
