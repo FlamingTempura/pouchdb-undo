@@ -1,0 +1,16 @@
+language: node_js
+
+node_js:
+  - "0.10"
+
+script: npm run $COMMAND
+
+env:
+  matrix:
+  - COMMAND=test
+  - COMMAND=coverage
+
+branches:
+  only:
+  - master
+  - /^pull*$/
