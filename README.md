@@ -7,7 +7,7 @@ Each operation will return a `undoId` within the response. Use the undoId to rev
 
 Undo creating a document:
 ```js
-pouch.put({}).then(function (result) {
+pouch.put({ _id: 'cat' }).then(function (result) {
   return pouch.undo(result.undoId);
 });
 ```
