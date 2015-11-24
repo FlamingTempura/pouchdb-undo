@@ -3,6 +3,33 @@ PouchDB Undo Plugin
 
 Adds undo functionality to all operations (put, post, remove and bulkDocs) on a database. It allows the reversal of creations, changes and deletions.
 
+Each operation will return a `undoId` within the response. Use the undoId to revert the operation.
+
+Undo creating a document:
+```js
+pouch.put({}).then(function (result) {
+  return pouch.undo(result.undoId);
+});
+```
+
+Undo changing a document:
+```js
+pouch.put({ _id: 'dog', sound: 'bark' }).then(function (result) {
+  return pouch.put({ _id: 'dog', _rev: result.rev, sound: 'woof'});
+}).then(function (result) {
+  return pouch.undo(result.undoId);
+});
+```
+
+Undo deleting a document:
+```js
+pouch.put({ _id: 'wolf' }).then(function (result) {
+  return pouch.remove('wolf', result.rev);
+}).then(function (result) {
+  return pouch.undo(result.undoId);
+});
+```
+
 Usage
 ---
 
@@ -19,11 +46,14 @@ Or to use it in Node.js, just npm install it:
 npm install pouchdb-undo
 ```
 
-And then attach it to the `PouchDB` object:
+Attach it to the `PouchDB` object and enable it per database:
 
 ```js
 var PouchDB = require('pouchdb');
 PouchDB.plugin(require('pouchdb-undo'));
+
+var animals = new PouchDB('animals');
+animals.enableUndo();
 ```
 
 
