@@ -1,6 +1,8 @@
 PouchDB Undo Plugin
 =====
 
+[![Build Status](https://travis-ci.org/FlamingTempura/pouchdb-undo.svg?branch=master)](https://travis-ci.org/FlamingTempura/pouchdb-undo)
+
 Adds undo functionality to all operations (put, post, remove and bulkDocs) on a database. It allows the reversal of creations, changes and deletions.
 
 Each operation will return a `undoId` within the response. Use the undoId to revert the operation.
