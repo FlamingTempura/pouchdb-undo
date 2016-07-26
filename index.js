@@ -1,14 +1,14 @@
 'use strict';
 
 var wrappers = require('pouchdb-wrappers');
+var uuid = require('node-uuid').v4;
+var Promise = require('es6-promise').Promise;
 
 exports.enableUndo = function (options) {
 	if (!options) { options = {}; }
 	if (!options.hasOwnProperty('limit')) { options.limit = 100; }
 	var db = this,
 		PouchDB = this.constructor,
-		Promise = PouchDB.utils.Promise,
-		uuid = PouchDB.utils.uuid,
 		error = function (options) {
 			var error = new Error(options.reason);
 			error.status = options.status;
